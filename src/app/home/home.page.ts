@@ -17,8 +17,11 @@ import {CommonModule} from "@angular/common";
 export class HomePage {
   constructor(private api: ApiService, private modal: ModalService) { }
   async open(): Promise<void> {
+    console.log('open');
     const myValue = (await firstValueFrom(this.modal.createLoad( () =>this.api.get())))[0];
+    console.log('myValue', myValue);
     this.openExternalBrowser(`https://www.apnews.com/${myValue.id}`);
+    console.log('open done');
   }
 
   openExternalBrowser(url: string): void {

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AlertController, LoadingController, NavController } from '@ionic/angular';
 import { LoadingOptions } from '@ionic/core';
-import { asyncScheduler, defer, Observable, ObservableInput, of, scheduled, throwError, zip } from 'rxjs';
+import { defer, Observable, ObservableInput, of, throwError, zip } from 'rxjs';
 import { catchError, finalize, mergeMap } from 'rxjs/operators';
 import { Renderer } from './renderer.service';
 import { LoadingContentComponent } from '../shared/loading-content/loading-content.component';
@@ -43,34 +43,32 @@ export class ModalService {
 
     const onRenderComponent = async (modal: HTMLIonLoadingElement): Promise<HTMLIonLoadingElement> => {
       console.log('onRenderComponent');
-
       const host = modal.querySelector('.loading-content');
 
-      if (!host) {
-        throw new Error('Host element not found');
-      }
-
       // Remove all children from the host
-      while (host.firstChild) {
+      while (host?.firstChild) {
         host.firstChild.remove();
       }
 
       // Mount the component onto the host
-      const handle = this.renderer.createHandle(host, LoadingContentComponent);
-      await handle.mount();
 
-      // Unmount when the modal is dismissed
-      void modal.onDidDismiss().then(() => {
-        console.log('onDidDismiss start');
-        handle.unmount();
-        console.log('onDidDismiss end');
-      });
+      if (host) {
+        const handle = this.renderer.createHandle(host, LoadingContentComponent);
+        await handle.mount();
+
+        // Unmount when the modal is dismissed
+        void modal.onDidDismiss().then(() => {
+          console.log('onDidDismiss start');
+          handle.unmount();
+          console.log('onDidDismiss end');
+        });
+      }
       return modal;
     };
 
     const onSubscribe = (): ObservableInput<[HTMLIonLoadingElement, CallbackError | T]> => {
       console.log('onSubscribe');
-      return zip(scheduled(createModal(), asyncScheduler), callback().pipe(catchError(onCatch)));
+      return zip(createModal(), callback().pipe(catchError(onCatch)));
     };
 
     const onComplete = ([modal, result]: [HTMLIonLoadingElement, CallbackError | T]): ObservableInput<T> => {
@@ -82,4 +80,5 @@ export class ModalService {
     console.log('returning defer');
     return defer(onSubscribe).pipe(mergeMap(onComplete));
   }
+
 }
